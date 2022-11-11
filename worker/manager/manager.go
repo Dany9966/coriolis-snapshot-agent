@@ -16,6 +16,7 @@
 package manager
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io/fs"
@@ -471,6 +472,31 @@ func (m *Snapshot) cleanupSnapStore(snapStore db.SnapStore) error {
 	return nil
 }
 
+func dumpDevBitmap(dev types.DevID, bitmap []byte, lineLength int) error {
+	tmpFile := fmt.Sprintf("/tmp/bitmap-dev-%d-%d", dev.Major, dev.Major)
+	f, err := os.Create(tmpFile)
+	if err != nil {
+		return errors.Wrap(err, "dumping bitmap")
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+	length := len(bitmap)
+	lines := length / lineLength
+	res := length % lineLength
+	var tmp int
+	for j := 0; j < lines; j++ {
+		s := fmt.Sprintln(bitmap[tmp : tmp+lineLength])
+		w.WriteString(s)
+		tmp += lineLength
+	}
+	if res != 0 {
+		s := fmt.Sprintln(bitmap[tmp : tmp+res])
+		w.WriteString(s)
+	}
+	return nil
+}
+
 // CreateSnapshot creates a new snapshot of one or more disks.
 func (m *Snapshot) CreateSnapshot(param params.CreateSnapshotRequest) (params.SnapshotResponse, error) {
 	m.mux.Lock()
@@ -665,6 +691,7 @@ func (m *Snapshot) CreateSnapshot(param params.CreateSnapshotRequest) (params.Sn
 		if err != nil {
 			return params.SnapshotResponse{}, errors.Wrapf(err, "fetchinb bitmap for device %d:%d", dev.Major, dev.Minor)
 		}
+		dumpDevBitmap(dev, bitmap.Buff, 100)
 		volumeSnapshot.Bitmap = bitmap.Buff
 		volumeSnapshot.SnapStore = snapStoreMap[dev]
 		newVolumeSnapshots = append(newVolumeSnapshots, volumeSnapshot)
