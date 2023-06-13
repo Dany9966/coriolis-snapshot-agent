@@ -37,7 +37,7 @@ import (
 
 var (
 	conf    = flag.String("config", config.DefaultConfigFile, "exporter config file")
-	install = flag.Bool("install", false, "runs the installation script")
+	install = flag.String("install", "", "runs the installation script")
 	version = flag.Bool("version", false, "prints version")
 )
 
@@ -50,8 +50,8 @@ func main() {
 		return
 	}
 
-	if *install {
-		scripts.RunInstall()
+	if install != nil {
+		scripts.RunInstall(*install)
 		return
 	}
 

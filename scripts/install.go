@@ -34,7 +34,7 @@ func writeEmbeddedFile(filename string, destination string, mode fs.FileMode) er
 	return os.WriteFile(filePath, fileContent, mode)
 }
 
-func RunInstall() {
+func RunInstall(args string) {
 	dir, err := os.MkdirTemp("", "snapshot-agent")
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +60,7 @@ func RunInstall() {
 
 	scriptPath := filepath.Join(dir, "setup/setup.sh")
 	scriptDir := filepath.Dir(scriptPath)
-	scriptCmd := fmt.Sprintf("%s %s %s", scriptPath, "-e", execPath)
+	scriptCmd := fmt.Sprintf("%s %s %s %s", scriptPath, "-e", execPath, args)
 
 	cmd := exec.Command("/bin/bash", "-c", scriptCmd)
 	cmd.Stdin = os.Stdin
